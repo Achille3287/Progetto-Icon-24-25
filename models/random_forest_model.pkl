@@ -1,0 +1,7 @@
+import joblib
+
+# Salva il modello
+joblib.dump(model, 'models/random_forest_model.pkl')
+
+# Carica il modello
+model = joblib.load('models/random_forest_model.pkl')

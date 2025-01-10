@@ -1,0 +1,14 @@
+{
+    "model_name": "RandomForestRegressor",
+    "version": "1.0",
+    "training_date": "2024-12-09",
+    "hyperparameters": {
+        "n_estimators": 100,
+        "random_state": 42
+    },
+    "metrics": {
+        "MAE": 12.45,
+        "MSE": 18.23,
+        "RMSE": 4.27
+    }
+}
