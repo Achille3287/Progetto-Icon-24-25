@@ -1,5 +1,18 @@
-matplotlib
-numpy
-pandas
-pyswip
-scikit_learn
+
+# Librerie per la gestione dei dati
+pandas>=1.3.0
+numpy>=1.21.0
+
+# Librerie per Machine Learning
+scikit-learn>=0.24.2
+xgboost>=1.4.2
+joblib>=1.0.1
+
+# Librerie per visualizzazione
+matplotlib>=3.4.2
+
+# Libreria per la gestione delle ontologie
+owlready2>=0.38
+
+# Libreria per il monitoraggio dei file
+watchdog>=2.1.6
