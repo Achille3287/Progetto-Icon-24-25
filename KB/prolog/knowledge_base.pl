@@ -1,51 +1,47 @@
 % Importazione delle classi
 :- include('setup.pl').
 
-
 %%  Regole della base di conoscenza
 
-
 /**
- * Calcola la distanza tra due nodi X e Y
+ * Calcola la distanza tra due stazioni di monitoraggio X e Y
  *
- * @param X: primo nodo
- * @param Y: secondo nodo
- * @param S: distanza tra i due nodi (viene restituito il risultato)
+ * @param X: prima stazione di monitoraggio
+ * @param Y: seconda stazione di monitoraggio
+ * @param S: distanza tra le due stazioni (viene restituito il risultato)
  */
-distanza_nodi(X, Y, S) :- prop(X, latitudine, L1), prop(Y, latitudine, L2), 
-                       prop(X, longitudine, G1), prop(Y, longitudine, G2), 
-                       S is abs(L1 - L2 + G1 - G2).
+distanza_stazioni(X, Y, S) :- prop(X, latitudine, L1), prop(Y, latitudine, L2), 
+                              prop(X, longitudine, G1), prop(Y, longitudine, G2), 
+                              S is abs(L1 - L2 + G1 - G2).
 
 
 /**
- * Restituisce gli incroci immediatamente vicini dell'incrocio passato in input.
- * Due incroci sono immediatamente vicini se collegati da una stessa strada.
+ * Restituisce le stazioni di monitoraggio immediatamente vicine a una data stazione.
+ * Due stazioni sono vicine se appartengono alla stessa zona urbana.
  *
- * @param Incrocio: Incrocio di cui si vogliono conoscere i vicini
- * @param Vicini: lista di incroci vicini (viene restituito il risultato)
+ * @param Stazione: Stazione di cui si vogliono conoscere le vicine
+ * @param Vicine: lista di stazioni vicine (viene restituito il risultato)
  */
-vicini_incrocio(Incrocio, Vicini) :- prop(Incrocio, type, incrocio), 
-                                     prop(Incrocio, strade, Strade), 
-                                     vicini_strade_incrocio(Incrocio, Strade, Vicini).
+stazioni_vicine(Stazione, Vicine) :- prop(Stazione, type, stazione_monitoraggio), 
+                                     prop(Stazione, zona_monitorata, Zona), 
+                                     stazioni_nella_zona(Stazione, Zona, Vicine).
 
-vicini_strade_incrocio(Incrocio, [], Vicini) :- prop(Incrocio, type, incrocio), Vicini = [].
-vicini_strade_incrocio(Incrocio, [S1|S2], Vicini) :- prop(S1, nodi, N1),
-                                                     suddividi_prefisso_suffisso(Incrocio, N1, Prefisso, Suffisso),
-                                                     inverti(Prefisso, Prefisso1),
-                                                     find_first(Prefisso1, Vicino1),
-                                                     find_first(Suffisso, Vicino2),
-                                                     vicini_strade_incrocio(Incrocio, S2, Vicini3),
-                                                     append(Vicini3, [Vicino1|Vicino2], Vicini).
+stazioni_nella_zona(Stazione, [], Vicine) :- prop(Stazione, type, stazione_monitoraggio), Vicine = [].
+stazioni_nella_zona(Stazione, [Z1|Z2], Vicine) :- prop(Z1, punti_monitoraggio, P1),
+                                                  suddividi_prefisso_suffisso(Stazione, P1, Prefisso, Suffisso),
+                                                  inverti(Prefisso, Prefisso1),
+                                                  find_first(Prefisso1, Vicina1),
+                                                  find_first(Suffisso, Vicina2),
+                                                  stazioni_nella_zona(Stazione, Z2, Vicine3),
+                                                  append(Vicine3, [Vicina1|Vicina2], Vicine).
 
 
 /**
- * Restituisce la latitudine e longitudine di un nodo passato in input
+ * Restituisce la latitudine e la longitudine di una stazione di monitoraggio
  *
- * @param X: nodo di cui si vogliono conoscere le coordinate
+ * @param X: Stazione di cui si vogliono conoscere le coordinate
  * @param L: latitudine 
- * @param G: latitudine 
- * 
+ * @param G: longitudine 
  */
 lat_lon(X, Latitudine, Longitudine) :- prop(X, latitudine, Latitudine), 
                                        prop(X, longitudine, Longitudine).
-

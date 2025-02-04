@@ -1,209 +1,181 @@
 import math
-from KB.markovChain.libs.HMM import HMM, simulate, create_eg
 import numpy as np
 import copy
+from src.models.markov_chain.HMM import HMM, simulate
 
-seconds = 5
+seconds = 5  # Intervallo temporale per la discretizzazione delle previsioni
 
-def getprobverde(seq1, seq2, seconddist, velocita = 0):
-    
-    chain1 = create_chain(seq1, velocita)
-    chain2 = create_chain(seq2, velocita)
+def get_transition_probability(seq1, seq2, time_offset, velocity=0):
+    """
+    Calcola la probabilità di transizione tra due sequenze basate su una catena di Markov.
 
-    totale_chain1 = len(chain1.states) * seconds
-    totale_chain2 = len(chain2.states) * seconds
+    Args:
+        seq1 (list): Prima sequenza di stati.
+        seq2 (list): Seconda sequenza di stati.
+        time_offset (int): Differenza temporale tra le due sequenze.
+        velocity (float): Fattore di velocità per il calcolo della transizione.
 
-    mcm =  math.lcm(totale_chain1, totale_chain2)
-    num_cicli1  = int(mcm / totale_chain1)
-    num_cicli2  = int(mcm / totale_chain2)
+    Returns:
+        float: Probabilità di transizione tra gli stati.
+    """
 
-    stateseq1, obseq1 = simulate(chain1, int(num_cicli1 * (totale_chain1 / seconds)))
-    stateseq2, obseq2 = simulate(chain2, int(num_cicli2 * (totale_chain2 / seconds)))
+    chain1 = create_chain(seq1, velocity)
+    chain2 = create_chain(seq2, velocity)
 
-    # prendo la posizione dei cicli in cui c'è il passaggio da rosso a verde nella catena 1
-    arrVerdi = []
-    for i in range(len(obseq1)):
-        if obseq1[i]['rosso'] == 1 and obseq1[(i+1) % len(obseq1)]['rosso'] == 0:
-            arrVerdi.append((i+1) % len(obseq1))
+    total_chain1 = len(chain1.states) * seconds
+    total_chain2 = len(chain2.states) * seconds
 
-    # calcolo la differenza che ci sono tra le due catene
-    seconddist = seconddist % totale_chain2
-    diff_cicli = int(seconddist / seconds)
+    lcm_val = math.lcm(total_chain1, total_chain2)
+    num_cycles1 = int(lcm_val / total_chain1)
+    num_cycles2 = int(lcm_val / total_chain2)
 
-    # aggiungo la differenza all'arrayVerdi
-    for i in range(len(arrVerdi)):
-        arrVerdi[i] = (arrVerdi[i] + diff_cicli) % len(obseq2)
+    states_seq1, obs_seq1 = simulate(chain1, int(num_cycles1 * (total_chain1 / seconds)))
+    states_seq2, obs_seq2 = simulate(chain2, int(num_cycles2 * (total_chain2 / seconds)))
 
-    # calcolo quanti verdi ci sono in ogni ciclo della catena 2 in corrispondenza del ciclo 1
+    transition_points = []
+    for i in range(len(obs_seq1)):
+        if obs_seq1[i]['high_pollution'] == 1 and obs_seq1[(i + 1) % len(obs_seq1)]['high_pollution'] == 0:
+            transition_points.append((i + 1) % len(obs_seq1))
+
+    time_offset = time_offset % total_chain2
+    offset_cycles = int(time_offset / seconds)
+
+    for i in range(len(transition_points)):
+        transition_points[i] = (transition_points[i] + offset_cycles) % len(obs_seq2)
+
     count = 0
-    for item in arrVerdi:
-        if (obseq2[(item-1)%len(obseq2)]["verde"] == 1):
+    for item in transition_points:
+        if obs_seq2[(item - 1) % len(obs_seq2)]["low_pollution"] == 1:
             count += 0.5
-        if (obseq2[item]["verde"] == 1):
+        if obs_seq2[item]["low_pollution"] == 1:
             count += 1
-        if (obseq2[(item+1)%len(obseq2)]["verde"] == 1):
+        if obs_seq2[(item + 1) % len(obs_seq2)]["low_pollution"] == 1:
             count += 0.5
 
-    if len(arrVerdi) == 0:
+    if len(transition_points) == 0:
         return 0
-        
-    prob = count / (len(arrVerdi) * (0.5 + 1 + 0.5))
+
+    prob = count / (len(transition_points) * (0.5 + 1 + 0.5))
     return prob
 
-def syncro(seq1, seq2, ciclo_2, seconddist, velocita):  # usando mcm; #seq1 = sequenza primo incrocio; #seq2 = sequenza secondo incrocio
-    '''
-    seq1 = sequenza primo incrocio
-    seq2 = sequenza secondo incrocio
-    ciclo2 = ciclo di ogni semaforo del secondo incrocio
-    seconddist = secondi di distanza tra seq1 e seq2
-    '''
-    cycle1 = 0
-    for value in seq1:
-        cycle1 += value['tempo']
-    cycle2 = 0
-    for value in seq2:
-        cycle2 += value['tempo']
-    
+def optimize_sequence(seq1, seq2, cycle_2, time_offset, velocity):
+    """
+    Ottimizza la sequenza temporale di inquinamento per ridurre la sovrapposizione di eventi critici.
+
+    Args:
+        seq1 (list): Prima sequenza di stati ambientali.
+        seq2 (list): Seconda sequenza di stati ambientali.
+        cycle_2 (dict): Ciclo temporale della seconda sequenza.
+        time_offset (int): Differenza temporale tra le sequenze.
+        velocity (float): Fattore di velocità.
+
+    Returns:
+        tuple: Sequenza ottimizzata e ciclo aggiornato.
+    """
+    cycle1 = sum(value['time'] for value in seq1)
+    cycle2 = sum(value['time'] for value in seq2)
+
     if cycle1 == cycle2:
-        itMax = cycle2 / seconds
-        funzione = shift 
+        max_iterations = cycle2 / seconds
+        adjustment_function = shift_sequence
     else:
-        itMax = math.ceil(cycle2 / (seconds * 10)) * seconds
-        funzione = addVerde
-    
+        max_iterations = math.ceil(cycle2 / (seconds * 10)) * seconds
+        adjustment_function = extend_pollution_period
+
     i = 0
-    soglia = getprobverde(seq1, seq2, seconddist, velocita)
-    maxSeq = copy.deepcopy(seq2)
-    copyCiclo2 = copy.deepcopy(ciclo_2)
-    sogliaMax = soglia
-    while soglia < 1 and i < itMax:
-        seq2 = funzione(seq2, ciclo_2)
-        soglia = getprobverde(seq1, seq2, seconddist, velocita)
-        if (sogliaMax < soglia):
-            sogliaMax = soglia
-            copyCiclo2 = copy.deepcopy(ciclo_2)
-            maxSeq = copy.deepcopy(seq2)
+    threshold = get_transition_probability(seq1, seq2, time_offset, velocity)
+    best_seq = copy.deepcopy(seq2)
+    best_cycle = copy.deepcopy(cycle_2)
+    max_threshold = threshold
+
+    while threshold < 1 and i < max_iterations:
+        seq2 = adjustment_function(seq2, cycle_2)
+        threshold = get_transition_probability(seq1, seq2, time_offset, velocity)
+
+        if max_threshold < threshold:
+            max_threshold = threshold
+            best_cycle = copy.deepcopy(cycle_2)
+            best_seq = copy.deepcopy(seq2)
         i += 1
-        
-    return maxSeq, copyCiclo2
 
-def deleteDuplicati(seq):
-    i = 0
-    while i < len(seq)-1:
-        if seq[i]['colore'] == seq[i+1]['colore']:
-            seq[i]['tempo'] += seq[i+1]['tempo']
-            seq.pop(i+1)
-        else:
-            i += 1
-    return seq
+    return best_seq, best_cycle
 
-def addVerde(seq2, ciclo_2):
+def extend_pollution_period(seq2, cycle_2):
     for i in range(len(seq2)):
-        if seq2[i]['colore'] == 'verde':
-            posVerde = i
-            
-        if seq2[i]['colore'] == 'rosso':
-            posRosso = i
-            
-    seq2[posVerde]['tempo'] += 1
-    seq2[posRosso]['tempo'] -= 1
+        if seq2[i]['status'] == 'low_pollution':
+            pos_low = i
+        if seq2[i]['status'] == 'high_pollution':
+            pos_high = i
 
-    for strada, ciclo_strada in ciclo_2.items():
-        for i in range(len(ciclo_strada)):
-            if ciclo_strada[i]['colore'] == 'verde':
-                posVerde = i
-                
-            if ciclo_strada[i]['colore'] == 'rosso':
-                posRosso = i
-                
-        ciclo_strada[posVerde]['tempo'] -= 1 / len(ciclo_2)
-        ciclo_strada[posRosso]['tempo'] += 1 / len(ciclo_2)
+    seq2[pos_low]['time'] += 1
+    seq2[pos_high]['time'] -= 1
+
+    for region, cycle_region in cycle_2.items():
+        for i in range(len(cycle_region)):
+            if cycle_region[i]['status'] == 'low_pollution':
+                pos_low = i
+            if cycle_region[i]['status'] == 'high_pollution':
+                pos_high = i
+
+        cycle_region[pos_low]['time'] -= 1 / len(cycle_2)
+        cycle_region[pos_high]['time'] += 1 / len(cycle_2)
 
     return seq2
 
-def shift(seq2, ciclo_2 = []): #seq2 = sequenza secondo incrocio
-    i = len(seq2)-1
+def shift_sequence(seq2, cycle_2=[]):
+    i = len(seq2) - 1
     t = 0
     while t < seconds:
-        t += seq2[i]['tempo']
+        t += seq2[i]['time']
         i -= 1
-    
+
     if t > seconds:
         i += 1
         diff = t - seconds
-        copia = copy.deepcopy(seq2[i])
-        seq2.insert(i, copia)
-        seq2[i]['tempo'] = diff
-        seq2[i+1]['tempo'] -= diff
+        copy_segment = copy.deepcopy(seq2[i])
+        seq2.insert(i, copy_segment)
+        seq2[i]['time'] = diff
+        seq2[i + 1]['time'] -= diff
 
-    pos = len(seq2)-(i+1)
+    shift_pos = len(seq2) - (i + 1)
 
-    if len(ciclo_2) > 0:
-        for strada, ciclo in ciclo_2.items():
-            ciclo_2[strada] = shift(ciclo)
+    if len(cycle_2) > 0:
+        for region, cycle in cycle_2.items():
+            cycle_2[region] = shift_sequence(cycle)
 
-    return deleteDuplicati(np.roll(seq2, pos).tolist())
-    #return nuova sequenza shiftata se hanno lunghezza ciclo uguale
+    return np.roll(seq2, shift_pos).tolist()
 
-def create_chain(sequence, velocita = 0):
-    cycle = 0
-    for value in sequence:
-        cycle += value['tempo']
+def create_chain(sequence, velocity=0):
+    """
+    Crea una catena di Markov basata sui dati di qualità dell'aria.
+
+    Args:
+        sequence (list): Sequenza di stati.
+        velocity (float): Parametro opzionale di velocità.
+
+    Returns:
+        HMM: Modello di Markov Hidden per la sequenza.
+    """
+    total_time = sum(value['time'] for value in sequence)
+    num_states = int(total_time / seconds)
+
+    states = {'state_' + str(i) for i in range(num_states)}
+    observations = {'low_pollution', 'moderate_pollution', 'high_pollution'}
+
+    transition_prob = 1
+
+    if velocity > 0:
+        mu, sigma = velocity, 3.76
+        sample = np.random.normal(mu, sigma, 1)[0]
+        sample = max(sample, 0)  # Assicura che non sia negativo
+        transition_prob = sample / velocity
+
+    transitions = {state: {st: 0 for st in states} for state in states}
     
-    numstati = int (cycle / seconds)
-    list = []
-    for i in range(numstati):
-        list.append('ciclo_' + str(i))
-    
-    states = set(list)
-    obs = {'rosso', 'verde', 'giallo'}
-    
-    prob = 1
-
-    if velocita > 0:
-        mu, sigma = velocita, 3.76
-        campione = np.random.normal(mu, sigma, 1)[0]
-
-        # rende il campione minore della velocita
-        if campione > velocita:
-            diff = campione - velocita
-            campione -= 2*diff
-
-        prob = campione/velocita
-
-    trans = {}
+    # Assegna le probabilità di transizione
     for state in states:
-        i = int(state.split('ciclo_')[1])
-        trans[state] = {}
-        for state1 in states:
-            j = int (state1.split('ciclo_')[1])
-            if j == (i + 1) % numstati:
-                trans[state][state1] = prob
-            elif j == i:
-                trans[state][state1] = 1 - prob
-            else:
-                trans[state][state1] = 0
-    
-    pobs = {}
-    pobs['verde'] = {st: 0 for st in states}
-    pobs['rosso'] = {st: 0 for st in states}
-    pobs['giallo'] = {st: 0 for st in states}
-    tot = 0
-    for i in range(len(sequence)):
-        for state in states:
-            time = (int(state.split('ciclo_')[1]) + 1) * seconds
-            if time <= sequence[i]['tempo'] + tot and time > tot:
-                if pobs[sequence[i]['colore']][state] == 0:
-                    pobs[sequence[i]['colore']][state] = 1
-            elif time - (sequence[i]['tempo'] + tot) < seconds:
-                if time > tot:
-                    pobs[sequence[i]['colore']][state] = (seconds - (time - (sequence[i]['tempo'] + tot))) / seconds
-                    pobs[sequence[(i+1) % len(sequence)]['colore']][state] = (time - (sequence[i]['tempo'] + tot)) / seconds
-        tot += sequence[i]['tempo']
-    
+        idx = int(state.split('_')[1])
+        transitions[state]['state_' + str((idx + 1) % num_states)] = transition_prob
+        transitions[state][state] = 1 - transition_prob
 
-    indist = {st:0 for st in states}
-    indist["ciclo_0"] = 1
-
-    hmm = HMM(states, obs, pobs, trans, indist)
-    return hmm
+    return HMM(states, observations, transitions)

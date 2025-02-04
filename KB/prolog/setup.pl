@@ -1,13 +1,9 @@
 % Importazione delle classi
-:- include('class_value/strada.pl').
-:- include('class_value/incrocio.pl').
-
+:- include('class_value/zona_urbana.pl').
+:- include('class_value/stazione_monitoraggio.pl').
 
 % Definizione relazione di tipo e sottoclasse
 prop(X, type, C) :- prop(S, subClassOf, C), prop(X, type, S).
-
-
-
 
 % Clausole di supporto (librerie)
 
@@ -20,10 +16,11 @@ select(Elem, Prefix, Suffix, List) :-
     position(Elem, List, Position),
     split_at(Position, List, Prefix, Suffix).
 
-position(_, [], _) :-
-    !, fail.
+position(_, [], _) :- !, fail.
 position(Elem, [Elem|_], 1).
-position(Elem, [_|Tail], Position) :- position(Elem, Tail, Position1), Position is Position1 + 1.
+position(Elem, [_|Tail], Position) :- 
+    position(Elem, Tail, Position1), 
+    Position is Position1 + 1.
 
 split_at(1, [Elem|Tail], [Elem], Tail).
 split_at(Position, [Head|Tail], [Head|Prefix], Suffix) :-
@@ -32,21 +29,23 @@ split_at(Position, [Head|Tail], [Head|Prefix], Suffix) :-
 
 delete(_, [], []) :- !.
 delete(Elem, [Elem|Tail], Result) :- !, delete(Elem, Tail, Result).
-delete(Elem, [Head|Tail], [Head|Result]) :- \+ unify_with_occurs_check(Elem, Head), delete(Elem, Tail, Result).
+delete(Elem, [Head|Tail], [Head|Result]) :- 
+    \+ unify_with_occurs_check(Elem, Head), 
+    delete(Elem, Tail, Result).
 
+% Individua la prima stazione di monitoraggio in una lista
+prima_stazione(Nodo) :- prop(Nodo, type, stazione_monitoraggio).
 
-primo_incrocio(Nodo) :- prop(Nodo, type, incrocio).
 find_first(List, First) :- findall(Elem, 
                         (member(Elem, List), 
-                        call(primo_incrocio, Elem)), 
+                        call(prima_stazione, Elem)), 
                         ListTemp),
-                        get_first(ListTemp,First).
-
+                        get_first(ListTemp, First).
 
 get_first([], First) :- First = [].
 get_first([S1|_], First) :- First = [S1].
 
-
+% Inversione di una lista
 inverti(Lista, Invertita) :- inverti(Lista, [], Invertita).
 inverti([], Acc, Acc).
 inverti([H|T], Acc, Invertita) :- inverti(T, [H|Acc], Invertita).
