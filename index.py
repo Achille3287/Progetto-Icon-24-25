@@ -1,12 +1,18 @@
 import sys
 import os
+
+# Aggiunta del percorso src al sys.path per evitare problemi di import
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
-from src.data_ingestion.ingest_data import run_data_ingestion
-from src.data_ingestion.preprocessing.clean_data import clean_data
-from src.data_ingestion.models.train_model import train_model
-from src.data_ingestion.models.predict import predict
-from src.data_ingestion.models.evaluate_model import evaluate_model
-from src.data_ingestion.utils.logger import setup_logger, log_message
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'src/data_ingestion')))
+
+# Import corretti basati sui file presenti nel progetto
+from data_ingestion.ingest_data import run_data_ingestion
+from data_ingestion.preprocessing.clean_data import clean_data
+from data_ingestion.models.train_model import train_model
+from data_ingestion.models.predict import predict
+from data_ingestion.evaluation.evaluate_model import evaluate_model
+from data_ingestion.utils.logger import setup_logger, log_message
+
 
 def main():
     """
