@@ -1,7 +1,7 @@
 import pandas as pd
 import joblib
 import os
-from src.utils.logger import setup_logger, log_message
+from utils.logger import setup_logger, log_message
 
 def predict(file_path, model_path, output_path='dataset/predicted/predicted_results.csv'):
     """
