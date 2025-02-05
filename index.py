@@ -1,10 +1,12 @@
+import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 from src.data_ingestion.ingest_data import run_data_ingestion
-from src.preprocessing.clean_data import clean_weather_data, save_clean_data
-from src.models.train_model import train_model
-from src.models.predict import predict
-from src.evaluation.evaluate_model import evaluate_model
-from src.utils.logger import setup_logger, log_message
+from src.data_ingestion.preprocessing.clean_data import clean_data
+from src.data_ingestion.models.train_model import train_model
+from src.data_ingestion.models.predict import predict
+from src.data_ingestion.models.evaluate_model import evaluate_model
+from src.data_ingestion.utils.logger import setup_logger, log_message
 
 def main():
     """
