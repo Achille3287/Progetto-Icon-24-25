@@ -10,7 +10,7 @@ from data_ingestion.ingest_data import run_data_ingestion
 from data_ingestion.preprocessing.clean_data import clean_data
 from data_ingestion.models.train_model import train_model
 from data_ingestion.models.predict import predict
-from src.data_ingestion.evaluation.evaluate_model import evaluate_model
+from data_ingestion.evaluation.evaluate_model import evaluate_model
 from data_ingestion.evaluation.utils.logger import setup_logger, log_message
 
 def main():
