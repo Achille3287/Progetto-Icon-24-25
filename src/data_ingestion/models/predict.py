@@ -1,6 +1,12 @@
 import pandas as pd
 import joblib
 import os
+import sys
+
+
+# Aggiunge 'src' al percorso dei moduli Python
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+
 from evaluation.utils.logger import setup_logger, log_message
 
 def predict(file_path, model_path, output_path='dataset/predicted/predicted_results.csv'):
