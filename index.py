@@ -1,6 +1,7 @@
 import sys
 import os
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
 # Aggiunta del percorso src al sys.path per evitare problemi di import
@@ -37,11 +38,13 @@ def main():
         print("✅ DEBUG: Inizio pulizia dati...")
         cleaned_data = clean_data(raw_data_path)
         print("✅ DEBUG: Dati puliti.")
-        
+
         if cleaned_data is not None:
             os.makedirs(os.path.dirname(cleaned_data_path), exist_ok=True)
             cleaned_data.to_csv(cleaned_data_path, index=False)
             print(f"✅ DEBUG: Dati salvati in {cleaned_data_path}")
+        else:
+            raise ValueError("❌ Errore: La pulizia dei dati ha restituito None!")
 
         # Passaggio 3: Addestramento del modello
         model_output_path = os.path.join(os.getcwd(), 'models', 'random_forest_model.pkl')
@@ -59,15 +62,21 @@ def main():
         if predictions is not None:
             log_message(logger, '> Inizio del processo di valutazione del modello...', level='info')
             print("✅ DEBUG: Inizio valutazione modello...")
-            true_values = predictions['PM2.5']
-            predicted_values = predictions['Prediction_PM2.5']
-            report = evaluate_model(true_values, predicted_values, output_dir='evaluation_reports')
-            print(f"✅ DEBUG: Risultati valutazione modello: {report}")
+            true_values = predictions.get('PM2.5')
+            predicted_values = predictions.get('Prediction_PM2.5')
+            if true_values is not None and predicted_values is not None:
+                report = evaluate_model(true_values, predicted_values, output_dir='evaluation_reports')
+                print(f"✅ DEBUG: Risultati valutazione modello: {report}")
+            else:
+                print("❌ Errore: Le colonne di verità o previsione sono mancanti nel dataset!")
+        else:
+            print("❌ Errore: La previsione non ha prodotto dati validi!")
 
         log_message(logger, '--- Fine del processo di monitoraggio e previsione ---', level='info')
 
     except Exception as e:
         log_message(logger, f'Errore critico nel flusso principale: {e}', level='error')
+        print(f"❌ ERRORE CRITICO: {e}")
 
 if __name__ == '__main__':
     main()

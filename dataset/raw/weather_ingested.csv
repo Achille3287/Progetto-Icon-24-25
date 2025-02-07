@@ -1,5 +1,5 @@
-timestamp, location, temperature, humidity, wind_speed, wind_direction, pressure, precipitation
-2024-12-01 08:00:00,City_Center,22,60,3.5,180,1012,0.0
-2024-12-01 09:00:00,City_Center,23,62,3.8,190,1011,0.1
-2024-12-01 10:00:00,City_Center,error,63,3.6,185,1010,0.0
-2024-12-01 11:00:00,City_Center,24,999,,200,1009,unknown
+timestamp,location,temperature,humidity,wind_speed,wind_direction,pressure,precipitation,PM2.5,PM10,CO,SO2,NO2,O3
+2024-12-01 08:00:00,City_Center,22,60,3.5,180,1012,0.0,,,,,,
+2024-12-01 09:00:00,City_Center,23,62,3.8,190,1011,0.1,,,,,,
+2024-12-01 10:00:00,City_Center,error,63,3.6,185,1010,0.0,,,,,,
+2024-12-01 11:00:00,City_Center,24,999,,200,1009,unknown,,,,,,
