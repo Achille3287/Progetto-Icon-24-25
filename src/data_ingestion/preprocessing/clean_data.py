@@ -36,21 +36,25 @@ def clean_data(file_path, output_path='dataset/processed/weather_cleaned.csv'):
 
         # 🔍 Debugging del numero di righe nelle varie fasi
         print("🔍 DEBUG: Numero di righe prima della pulizia:", len(data))
+        print("🔍 DEBUG: Contiamo i NaN in ogni colonna prima della pulizia:\n", data.isna().sum())
 
         # Rimozione dei duplicati
         data.drop_duplicates(inplace=True)
-        print('✅ DEBUG: Duplicati rimossi. Numero di righe:', len(data))
+        print("🔍 DEBUG: Numero di righe dopo la rimozione di duplicati:", len(data))
 
-        # Gestione dei valori mancanti (sostituiti con la mediana per evitare eliminazione dati)
-        data.fillna(data.median(numeric_only=True), inplace=True)
-        print('✅ DEBUG: Valori mancanti sostituiti con la mediana. Numero di righe:', len(data))
+        # Gestione dei valori mancanti (sostituiti con la mediana solo nelle colonne necessarie)
+        for col in numeric_columns:
+            if col in data.columns:
+                data[col].fillna(data[col].median(), inplace=True)
+        print("🔍 DEBUG: Dopo riempimento NaN, contiamo i NaN per colonna:\n", data.isna().sum())
 
         # Evitiamo di eliminare troppi dati con gli outlier
         for col in numeric_columns:
             if col in data.columns and data[col].notna().sum() > 5:  # Controlliamo di avere almeno 5 dati validi
                 z_scores = (data[col] - data[col].mean()) / data[col].std()
                 data = data[(z_scores > -3) & (z_scores < 3)]
-        print('✅ DEBUG: Outlier rimossi, ma garantiamo che rimangano abbastanza dati. Numero di righe:', len(data))
+        print("🔍 DEBUG: Numero di righe dopo la rimozione outlier:", len(data))
+        print("🔍 DEBUG: Contiamo i NaN dopo la rimozione outlier:\n", data.isna().sum())
 
         # Normalizzazione Min-Max Scaling
         for col in numeric_columns:
@@ -60,7 +64,7 @@ def clean_data(file_path, output_path='dataset/processed/weather_cleaned.csv'):
 
         # 🔍 Debugging finale
         print("🔍 DEBUG: Numero finale di righe nel dataset:", len(data))
-        print("🔍 DEBUG: Prime righe del dataset dopo la pulizia:")
+        print("🔍 DEBUG: Contenuto finale del dataset:")
         print(data.head())
 
         # Creazione della cartella di output se non esiste
