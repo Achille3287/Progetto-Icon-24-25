@@ -45,7 +45,10 @@ def clean_data(file_path, output_path='dataset/processed/weather_cleaned.csv'):
         # Gestione dei valori mancanti (sostituiti con la mediana solo nelle colonne necessarie)
         for col in numeric_columns:
             if col in data.columns:
-                data[col].fillna(data[col].median(), inplace=True)
+                median_value = data[col].median()
+                if np.isnan(median_value):  # Se tutta la colonna è NaN
+                    median_value = 0  # Sostituiamo con 0 come default
+                data.loc[:, col] = data[col].fillna(median_value)
         print("🔍 DEBUG: Dopo riempimento NaN, contiamo i NaN per colonna:\n", data.isna().sum())
 
         # Evitiamo di eliminare troppi dati con gli outlier
@@ -59,16 +62,22 @@ def clean_data(file_path, output_path='dataset/processed/weather_cleaned.csv'):
         # Normalizzazione Min-Max Scaling
         for col in numeric_columns:
             if col in data.columns and data[col].notna().sum() > 0:  # Evitiamo divisioni per zero
-                data[col] = (data[col] - data[col].min()) / (data[col].max() - data[col].min())
+                data.loc[:, col] = (data[col] - data[col].min()) / (data[col].max() - data[col].min())
         print('✅ DEBUG: Dati normalizzati.')
 
-        # 🔍 Debugging finale
-        print("🔍 DEBUG: Numero finale di righe nel dataset:", len(data))
-        print("🔍 DEBUG: Contenuto finale del dataset:")
-        print(data.head())
+        # Rimuoviamo eventuali NaN nel target prima dell'addestramento
+        data = data.dropna(subset=['PM2.5'])
+        print("🔍 DEBUG: Contiamo i NaN dopo la rimozione della colonna target:\n", data.isna().sum())
+
+        # Debug per controllare la directory di salvataggio
+        print(f'🔍 DEBUG: Verifica della directory di output: {os.path.dirname(output_path)}')
 
         # Creazione della cartella di output se non esiste
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        # Debugging finale prima del salvataggio
+        print("🔍 DEBUG: Anteprima dei dati prima del salvataggio:")
+        print(data.head())
 
         # Salvataggio dei dati puliti
         data.to_csv(output_path, index=False)
