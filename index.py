@@ -1,5 +1,8 @@
 import sys
 import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
 # Aggiunta del percorso src al sys.path per evitare problemi di import
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
@@ -16,7 +19,7 @@ from data_ingestion.evaluation.utils.logger import setup_logger, log_message
 def main():
     """
     Flusso completo del sistema di monitoraggio e previsione della qualità dell'aria.
-    Ingestione -> Pulizia -> Addestramento -> Previsione -> Valutazione
+    Ingestione -> Pulizia -> Addestramento -> Previsione -> Valutazione -> Visualizzazione
     """
     logger = setup_logger(log_file_path='system.log')
 
@@ -26,38 +29,54 @@ def main():
         # Passaggio 1: Ingestione dei dati
         log_message(logger, '> Inizio del processo di ingestione dei dati...', level='info')
         run_data_ingestion()
+        print("✅ DEBUG: Processo di ingestione completato.")
 
         # Passaggio 2: Pulizia dei dati
         raw_data_path = os.path.join(os.getcwd(), 'dataset', 'raw', 'weather_ingested.csv')
         cleaned_data_path = os.path.join(os.getcwd(), 'dataset', 'processed', 'weather_cleaned.csv')
         log_message(logger, '> Inizio del processo di pulizia dei dati...', level='info')
-        cleaned_data = clean_weather_data(raw_data_path)
+        print("✅ DEBUG: Inizio pulizia dati...")
+        cleaned_data = clean_data(raw_data_path)
+        print("✅ DEBUG: Dati puliti.")
+
         if cleaned_data is not None:
-            save_clean_data(cleaned_data, cleaned_data_path)
+            os.makedirs(os.path.dirname(cleaned_data_path), exist_ok=True)
+            cleaned_data.to_csv(cleaned_data_path, index=False)
+            print(f"✅ DEBUG: Dati salvati in {cleaned_data_path}")
+        else:
+            raise ValueError("❌ Errore: La pulizia dei dati ha restituito None!")
 
         # Passaggio 3: Addestramento del modello
         model_output_path = os.path.join(os.getcwd(), 'models', 'random_forest_model.pkl')
         log_message(logger, '> Inizio del processo di addestramento del modello...', level='info')
+        print("✅ DEBUG: Inizio addestramento modello...")
         train_model(cleaned_data_path, model_output_path)
 
         # Passaggio 4: Previsione sui nuovi dati
         log_message(logger, '> Inizio del processo di previsione sui nuovi dati...', level='info')
-        prediction_data_path = cleaned_data_path  # Per ora usiamo lo stesso file per le previsioni
+        print("✅ DEBUG: Inizio previsione...")
+        prediction_data_path = cleaned_data_path
         predictions = predict(prediction_data_path, model_output_path)
 
         # Passaggio 5: Valutazione del modello
         if predictions is not None:
             log_message(logger, '> Inizio del processo di valutazione del modello...', level='info')
-            true_values = predictions['PM2.5']
-            predicted_values = predictions['Prediction_PM2.5']
-            report = evaluate_model(true_values, predicted_values, output_dir='evaluation_reports')
-            if report is not None:
-                log_message(logger, f'> Risultati della valutazione: {report}', level='info')
+            print("✅ DEBUG: Inizio valutazione modello...")
+            true_values = predictions.get('PM2.5')
+            predicted_values = predictions.get('Prediction_PM2.5')
+            if true_values is not None and predicted_values is not None:
+                report = evaluate_model(true_values, predicted_values, output_dir='evaluation_reports')
+                print(f"✅ DEBUG: Risultati valutazione modello: {report}")
+            else:
+                print("❌ Errore: Le colonne di verità o previsione sono mancanti nel dataset!")
+        else:
+            print("❌ Errore: La previsione non ha prodotto dati validi!")
 
         log_message(logger, '--- Fine del processo di monitoraggio e previsione ---', level='info')
 
     except Exception as e:
         log_message(logger, f'Errore critico nel flusso principale: {e}', level='error')
+        print(f"❌ ERRORE CRITICO: {e}")
 
 if __name__ == '__main__':
     main()
