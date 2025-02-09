@@ -24,14 +24,14 @@ if data is None:
 # Cambiamo "City_Center" in "Bari" e aggiungiamo altre città
 data['location'] = data['location'].replace("City_Center", "Bari")
 
-# Aggiungiamo altre città con dati simulati
+# Aggiungiamo altre città con dati più realistici
 new_cities = ["Roma", "Milano", "Napoli"]
 for city in new_cities:
     city_data = data[data['location'] == "Bari"].copy()
     city_data['location'] = city
-    city_data['temperature'] += np.random.uniform(-3, 3, size=len(city_data))
-    city_data['humidity'] += np.random.uniform(-5, 5, size=len(city_data))
-    city_data['PM2.5'] += np.random.uniform(-10, 10, size=len(city_data))
+    city_data['temperature'] = np.clip(city_data['temperature'] + np.random.uniform(-2, 2, size=len(city_data)), 10, 35)
+    city_data['humidity'] = np.clip(city_data['humidity'] + np.random.uniform(-3, 3, size=len(city_data)), 30, 90)
+    city_data['PM2.5'] = np.clip(city_data['PM2.5'] + np.random.uniform(-5, 5, size=len(city_data)), 5, 60)
     data = pd.concat([data, city_data])
 
 # Salviamo il nuovo dataset
@@ -40,7 +40,7 @@ data.to_csv(DATASET_PATH, index=False)
 # Creazione della finestra principale
 root = tk.Tk()
 root.title("Monitoraggio Qualità dell'Aria")
-root.geometry("700x600")
+root.geometry("800x600")
 
 # Messaggio di benvenuto
 welcome_label = tk.Label(root, text="Benvenuto Utente, seleziona la città", font=("Arial", 12))
@@ -70,21 +70,26 @@ def update_data():
     for row in data_frame.get_children():
         data_frame.delete(row)
     
-    # Aggiunge nuovi dati
+    # Aggiunge nuovi dati con formattazione migliorata
     for _, row in city_data.iterrows():
-        data_frame.insert("", "end", values=(row["temperature"], row["humidity"], row["PM2.5"]))
+        data_frame.insert("", "end", values=(f"{row['temperature']:.1f}", f"{row['humidity']:.1f}", f"{row['PM2.5']:.1f}"))
     
     # Aggiorna il grafico
     update_chart(city_data)
 
 # Grafico con Matplotlib
 def update_chart(city_data):
-    fig, ax = plt.subplots(figsize=(6, 4))
-    ax.plot(city_data['timestamp'], city_data['temperature'], label='Temperatura', marker='o')
-    ax.plot(city_data['timestamp'], city_data['humidity'], label='Umidità', marker='s')
-    ax.set_xticklabels(city_data['timestamp'], rotation=45, ha='right')
+    fig, ax = plt.subplots(figsize=(7, 4))
+    colors = ['blue' if temp < 20 else 'red' for temp in city_data['temperature']]
+    ax.scatter(city_data['timestamp'], city_data['temperature'], label='Temperatura', c=colors, marker='o')
+    ax.plot(city_data['timestamp'], city_data['humidity'], label='Umidità', linestyle='dashed', marker='s', color='orange')
+    ax.set_xticks(range(len(city_data)))
+    ax.set_xticklabels(city_data['timestamp'], rotation=45, ha='right', fontsize=8)
     ax.set_title(f"Dati meteo per {city_var.get()}")
+    ax.set_xlabel("Tempo")
+    ax.set_ylabel("Valori")
     ax.legend()
+    ax.grid(True, linestyle='--', alpha=0.6)
     
     # Inserisce il grafico nella GUI
     for widget in chart_frame.winfo_children():
