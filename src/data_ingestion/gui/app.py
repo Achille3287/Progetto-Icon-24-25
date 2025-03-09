@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import os
+import datetime
+import random
 
 # Percorso del dataset
 DATASET_PATH = "dataset/processed/weather_cleaned.csv"
@@ -32,6 +34,7 @@ for city in new_cities:
     city_data['temperature'] = np.clip(city_data['temperature'] + np.random.uniform(-2, 2, size=len(city_data)), 10, 35)
     city_data['humidity'] = np.clip(city_data['humidity'] + np.random.uniform(-3, 3, size=len(city_data)), 30, 90)
     city_data['PM2.5'] = np.clip(city_data['PM2.5'] + np.random.uniform(-5, 5, size=len(city_data)), 5, 60)
+    city_data['timestamp'] = pd.date_range(start=datetime.datetime.now(), periods=len(city_data), freq='T').strftime('%H:%M:%S')
     data = pd.concat([data, city_data])
 
 # Salviamo il nuovo dataset
@@ -61,9 +64,20 @@ data_frame.heading("Umidità", text="Umidità (%)")
 data_frame.heading("PM2.5", text="PM2.5 (µg/m³)")
 data_frame.pack(pady=10)
 
-# Funzione per aggiornare i dati
+# Funzione per aggiornare i dati in tempo reale
 def update_data():
     selected_city = city_var.get()
+    
+    # Simuliamo nuovi dati ogni aggiornamento
+    new_row = {
+        'location': selected_city,
+        'temperature': round(np.clip(random.uniform(10, 35), 10, 35), 1),
+        'humidity': round(np.clip(random.uniform(30, 90), 30, 90), 1),
+        'PM2.5': round(np.clip(random.uniform(5, 60), 5, 60), 1),
+        'timestamp': datetime.datetime.now().strftime('%H:%M:%S')
+    }
+    global data
+    data = pd.concat([data, pd.DataFrame([new_row])], ignore_index=True)
     city_data = data[data['location'] == selected_city].tail(10)
     
     # Pulisce la tabella prima di aggiornare
@@ -76,12 +90,13 @@ def update_data():
     
     # Aggiorna il grafico
     update_chart(city_data)
+    root.after(5000, update_data)  # Aggiorna ogni 5 secondi
 
 # Grafico con Matplotlib
 def update_chart(city_data):
     fig, ax = plt.subplots(figsize=(7, 4))
     colors = ['blue' if temp < 20 else 'red' for temp in city_data['temperature']]
-    ax.scatter(city_data['timestamp'], city_data['temperature'], label='Temperatura', c=colors, marker='o')
+    ax.plot(city_data['timestamp'], city_data['temperature'], label='Temperatura', color='blue', marker='o')
     ax.plot(city_data['timestamp'], city_data['humidity'], label='Umidità', linestyle='dashed', marker='s', color='orange')
     ax.set_xticks(range(len(city_data)))
     ax.set_xticklabels(city_data['timestamp'], rotation=45, ha='right', fontsize=8)

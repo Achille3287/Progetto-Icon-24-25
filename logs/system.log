@@ -194,3 +194,12 @@
 2025-02-09 19:38:48,273 - INFO - --- Avvio del sistema di monitoraggio della qualità dell'aria ---
 2025-02-09 19:38:48,273 - ERROR - Errore critico nel flusso principale: name 'run_gui' is not defined
 2025-02-09 19:38:48,274 - INFO - --- Chiusura del sistema di monitoraggio della qualità dell'aria ---
+2025-02-11 16:15:34,215 - INFO - --- Avvio del sistema di monitoraggio della qualità dell'aria ---
+2025-02-11 16:15:34,225 - ERROR - Errore critico nel flusso principale: name 'run_gui' is not defined
+2025-02-11 16:15:34,225 - INFO - --- Chiusura del sistema di monitoraggio della qualità dell'aria ---
+2025-03-09 16:29:39,483 - INFO - --- Avvio del sistema di monitoraggio della qualità dell'aria ---
+2025-03-09 16:29:39,484 - ERROR - Errore critico nel flusso principale: name 'run_gui' is not defined
+2025-03-09 16:29:39,484 - INFO - --- Chiusura del sistema di monitoraggio della qualità dell'aria ---
+2025-03-09 16:57:32,075 - INFO - --- Avvio del sistema di monitoraggio della qualità dell'aria ---
+2025-03-09 16:57:32,076 - ERROR - Errore critico nel flusso principale: name 'run_gui' is not defined
+2025-03-09 16:57:32,077 - INFO - --- Chiusura del sistema di monitoraggio della qualità dell'aria ---
