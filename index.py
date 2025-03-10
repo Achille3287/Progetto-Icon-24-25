@@ -3,6 +3,9 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import tkinter as tk
+import threading
+
 
 # Aggiunta del percorso src al sys.path per evitare problemi di import
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
@@ -15,6 +18,13 @@ from data_ingestion.models.train_model import train_model
 from data_ingestion.models.predict import predict
 from data_ingestion.evaluation.evaluate_model import evaluate_model
 from data_ingestion.evaluation.utils.logger import setup_logger, log_message
+from src.data_ingestion.gui.app import root  # Importa la finestra principale Tkinter
+
+
+def start_gui():
+    """Avvia la GUI in un thread separato."""
+    gui_thread = threading.Thread(target=run_gui, daemon=True)
+    gui_thread.start()
 
 def main():
     """
@@ -22,10 +32,13 @@ def main():
     Ingestione -> Pulizia -> Addestramento -> Previsione -> Valutazione -> Visualizzazione
     """
     logger = setup_logger(log_file_path='system.log')
-
+    
     try:
-        log_message(logger, '--- Avvio del sistema di monitoraggio della qualità dell\'aria ---', level='info')
-
+        log_message(logger, "--- Avvio del sistema di monitoraggio della qualità dell'aria ---", level='info')
+        
+        # Avvio della GUI
+        start_gui()
+        
         # Passaggio 1: Ingestione dei dati
         log_message(logger, '> Inizio del processo di ingestione dei dati...', level='info')
         run_data_ingestion()
@@ -73,10 +86,13 @@ def main():
             print("❌ Errore: La previsione non ha prodotto dati validi!")
 
         log_message(logger, '--- Fine del processo di monitoraggio e previsione ---', level='info')
-
+    
     except Exception as e:
         log_message(logger, f'Errore critico nel flusso principale: {e}', level='error')
         print(f"❌ ERRORE CRITICO: {e}")
+    finally:
+        log_message(logger, '--- Chiusura del sistema di monitoraggio della qualità dell\'aria ---', level='info')
+        print("✅ DEBUG: Chiusura del sistema.")
 
 if __name__ == '__main__':
     main()
